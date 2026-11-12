@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import ooty from './assets/ooty.jpg'
-import pondy from './assets/pondy.jpg'
 import axios from 'axios'
 import './App.css'
+
+import TripChat from "./TripChat";
 
 /* const InitialTrip =[
   {
@@ -25,7 +26,7 @@ function App() {
   const[placeName,setPlaceName] = useState('')
   const [notes,setNotes] = useState('')
   const[imagePreview,setImagePreview] = useState('')
-
+  const [selectedImage, setSelectedImage] = useState(null)
 
   /** Expense Section Stats */
   const [expenses, setExpenses] = useState([])
@@ -34,8 +35,6 @@ function App() {
 
   /** Chat data */
   const [showChat, setShowChat] = useState(false)
-
-
 
   //Save Expense
   const saveExpense = () => {
@@ -52,14 +51,11 @@ function App() {
 
     const newExpense = {
       id:Date.now(),
-      e_title : expenseTitle.trim(),
-      e_amount : amount
+      expense_name : expenseTitle.trim(),
+      expense_amount : amount
     }
-
     setExpenses((current_exp) => [...current_exp,newExpense]);
-
   }
-  
 
   useEffect(()=>{
     axios.get('http://127.0.0.1:8000/trips').then((response)=>{
@@ -85,12 +81,12 @@ function App() {
     resetForm();
   }
 
-  //Imahe Handle
+  //Image Handle
   function handleImageChange(event){
     const file=event.target.files[0]
-
-    if(file){
-      setImagePreview(URL.createObjectURL(file))
+    if (file) {
+        setSelectedImage(file)
+        setImagePreview(URL.createObjectURL(file))
     }
   }
 
@@ -112,42 +108,61 @@ function App() {
       alert("Enter Place Name ")
       return;
     }
-
     try{
-      const newTrip ={
+   /*    const newTrip ={
         place_name:placeName.trim(),
-        image_path : imagePreview || ooty,
+        image : imagePreview || ooty,
         notes: notes.trim(),
-
           expenses: expenses.map((expense)=>({
             expense_name : expense.e_title,
             expense_amount : expense.e_amount
           }))
       };
-
-     // console.log("Sending data:", newTrip);
-
-      //post request to FAST API 
+        //post request to FAST API 
       await axios.post("http://127.0.0.1:8000/trips", newTrip);
       await fetchTrips();
+      */
 
-      //setTrips((current)=> [...current,newTrip]);
+      const formData = new FormData()
+      formData.append("place_name", placeName)
+      formData.append("notes",notes)
+      formData.append("expenses", JSON.stringify(expenses))
+     /*  formData.append(
+          "expenses",
+          JSON.stringify(
+              expenses.map((expense) => ({
+                  expense_name: expense.e_title,
+                  expense_amount: expense.e_amount
+              }))
+          )
+      ); */
+
+      if(selectedImage){
+        formData.append("image", selectedImage)
+      }
+
+      const response = await axios.post(
+        "http://127.0.0.1:8000/trips",
+        formData
+      );
+
+      console.log(response.data);
+      alert('Trip added Successfully!')
+      await fetchTrips();
       closeModel();
     }catch (err){
-        console.error("Error adding trip",err)
-        alert("Unable to add Trip")
+      console.error("Error adding trip:", err)
+      console.error("Backend error:", err.response?.data)
+      alert(err.response?.data?.detail || "Unable to add Trip")
     }
   }
-
 
   return (
     <>
       <section id="center">
         <div className="home">
           <h1 className="main_title"> Welcome to my <br/> AI Powered Trip Memories..! </h1>
-
           <button className="add-trip" onClick={()=> setShowModel(true)}>Add Place</button>
-
           {showModel && (
             <div className="model-overlay">
             <div className="place-model" role="dialog" aria-model="true" aria-labelledby="model-title" onClick={(event)=> event.stopPropagation()}>
@@ -164,8 +179,6 @@ function App() {
                  { imagePreview && (
                   <img className="image-preview" src={imagePreview} alt="selected trip" />
                  )}
-
-
                 <label htmlFor="PlaceNote"> Notes to Cherish </label>
                 <textarea id="PlaceNote" placeholder="Write what you have seen,experienced" value={notes} onChange={(event)=>setNotes(event.target.value)} rows="3" />
 
@@ -186,8 +199,8 @@ function App() {
                   {expenses.map((expense) => (
                       <div className="expense-card">
                         <div className="expense-info">
-                          <strong>{expense.e_title}</strong>
-                          <span> {expense.e_amount}</span>
+                          <strong>{expense.expense_name}</strong>
+                          <span> {expense.expense_amount}</span>
                         </div>
                         <div className="expense-actions">
                           <button type="button" className="expense-edit-btn">Edit</button>
@@ -195,34 +208,25 @@ function App() {
                         </div>
                       </div>
                      ))}
-
                   </div>
-
-
                 </div>
 
                   <div className="model-footer">
                     <button type="submit" className="submit-btn"> Submit </button>
                   </div>
-
               </form>
             </div>
             </div>
           )}
-
           <div className="trip-list">
           {trips.map((trip) => ( 
             <div className="trip-set" key={trip.id}>
-              <img src={trip.image_path} alt={trip.place_name} />
+              <img src={`http://127.0.0.1:8000/${trip.image_path}`} alt={trip.place_name} />
               <h2>{trip.place_name}</h2>
-
               <p>{trip.notes}</p>
             </div>
           ))}
-           
           </div>
-
-
         </div>
       </section>
 
@@ -240,20 +244,11 @@ function App() {
             </div>
 
             <div className="chat_body">
-              <p>Hello, traveller! 🌍✨ </p>
-              <p>Ready to relive your beautiful memories? Let's take another trip together, virtually!</p>
+              <TripChat />
             </div>
-
-          <div className="chat_footer">
-            <input type="text" placeholder="Ask about your trips..."/>
-            <button>➤</button>
-          </div>
-
-
         </div>
        )}
     </>
   )
 }
-
 export default App

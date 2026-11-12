@@ -302,7 +302,7 @@ font-size:inherit;
   position:fixed;
   top:0;
   right:0;
-  width:350px;
+  width:450px;
   height:100vh;
   background:white;
   display:flex;
@@ -335,27 +335,6 @@ font-size:inherit;
 .chat_body{
   flex:1;
   padding:20px;
-}
-
-.chat_footer{
-  display:flex;
-  padding:15px;
-  gap:10px;
-  border:1px solid #ddd;
-}
-
-.chat_footer input {
-  flex:1;
-  padding:10px;
-  border: 1px solid #ccc;
-  border-radius : 20px;
-}
-
-.chat_footer button {
-  background: #27847e;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  cursor: pointer;
+  height: calc(100% - 53px);
+  min-height: 0;
 }
